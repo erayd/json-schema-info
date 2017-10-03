@@ -119,7 +119,7 @@ class SchemaInfo
      */
     public function __get($vocabulary)
     {
-        if (array_key_exists($vocabulary, $this->specInfo->vocabularies)) {
+        if ($vocabulary == 'keyword' || array_key_exists($vocabulary, $this->specInfo->vocabularies)) {
             return $this->$vocabulary = new Vocabulary($this, $vocabulary);
         } else {
             return $this->$vocabulary = null;

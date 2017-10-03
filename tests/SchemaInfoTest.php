@@ -109,4 +109,25 @@ class SchemaInfoTest extends \PHPUnit\Framework\TestCase
         $this->assertTrue($info->validation->properties->{'as-container'});
         $this->assertEquals(array('boolean'), $info->validation->exclusiveMinimum->{'allow-types'});
     }
+
+    // test universal 'keyword' vocabulary
+    public function testKeywordVocabulary()
+    {
+        $info = new SchemaInfo(SchemaInfo::SPEC_DRAFT_03);
+
+        // invalid keywords should be null
+        $this->assertNull($info->keyword->invalidKeyword);
+        $this->assertNull($info->keyword->{'$id'});
+
+        // valid keywords should be a RuleInfo object
+        $this->assertInstanceOf('\JsonSchemaInfo\RuleInfo', $info->keyword->id);
+        $this->assertInstanceOf('\JsonSchemaInfo\RuleInfo', $info->keyword->maxItems);
+
+        // implementation rules should be null, as they are not keywords
+        $this->assertNull($info->keyword->allowUndefinedTypes);
+
+        // types and formats aren't keywords either
+        $this->assertNull($info->keyword->integer);
+        $this->assertNull($info->keyword->email);
+    }
 }

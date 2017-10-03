@@ -38,10 +38,16 @@ class Vocabulary
      */
     public function __get($rule)
     {
-        if (in_array($rule, $this->spec->getSpecInfo()->vocabularies->{$this->vocabulary})) {
+        if ($this->vocabulary == 'keyword') {
+            foreach (array('core', 'validation', 'metadata') as $vocabulary) {
+                if (!is_null($vocabRule = $this->spec->$vocabulary->$rule)) {
+                    return $vocabRule;
+                }
+            }
+        } elseif (in_array($rule, $this->spec->getSpecInfo()->vocabularies->{$this->vocabulary})) {
             return $this->$rule = new RuleInfo($this->spec, $this->vocabulary, $rule);
-        } else {
-            return $this->$rule = null;
         }
+
+        return $this->$rule = null;
     }
 }
