@@ -218,4 +218,70 @@ class SchemaInfo
         // no match found
         return null;
     }
+
+    /**
+     * Check whether the provided JSON pointer target is a schema
+     *
+     * @param string $pointer
+     * @return bool
+     */
+    public function pointerTargetIsSchema($pointer)
+    {
+        // shortcut for pointers to schema root
+        if (in_array($pointer, array('#', '#/'))) {
+            return true;
+        }
+
+        // check pointer is valid
+        if (substr($pointer, 0, 2) != '#/') {
+            throw new \RuntimeException("Not a JSON pointer: $pointer");
+        }
+
+        // decode path
+        $path = array_map(function ($element) {
+            return strtr($element, array('~1' => '/', '~0' => '~'));
+        }, explode('/', substr($pointer, 2)));
+
+        // schema root cannot be an array and numeric properties are not valid keywords
+        if (is_numeric($path[0]) && $path[0] == floor($path[0])) {
+            return false;
+        }
+
+        // iterate path
+        $inContainer = false;
+        foreach ($path as $element) {
+            // ignore integer elements
+            if (is_numeric($element) && $element == floor($element)) {
+                continue;
+            }
+
+            // anything is allowed in the root of a container
+            if ($inContainer) {
+                $inContainer = false;
+                continue;
+            }
+
+            // check keyword exists
+            if (is_null($keyword = $this->keyword->$element)) {
+                return false;
+            }
+
+            // check whether keyword may contain a schema
+            if ($keyword->{'as-container'}) {
+                $inContainer = true;
+                continue;
+            } elseif (!$keyword->{'as-schema'}) {
+                return false;
+            }
+        }
+
+        // check that terminal element is not a container
+        $element = end($path);
+        if (!is_null($this->keyword->$element) && $this->keyword->$element->{'as-container'}) {
+            return false;
+        }
+
+        // provided the target type is correct, it may be treated as a schema
+        return true;
+    }
 }

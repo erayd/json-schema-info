@@ -130,4 +130,49 @@ class SchemaInfoTest extends \PHPUnit\Framework\TestCase
         $this->assertNull($info->keyword->integer);
         $this->assertNull($info->keyword->email);
     }
+
+
+    public function dataJsonPointerChecker()
+    {
+        return array(
+            array('#', true),                                     // root shortcut #1
+            array('#/', true),                                    // root shortcut #2
+            array('#/4', false),                                  // numeric root
+            array('#/notAKeyword', false),                        // not a keyword
+            array('#/const', false),                              // not a schema or a container, but valid keyword
+            array('#/not', true),                                 // top-level schema
+            array('#/allOf', true),                               // top-level array of schemas
+            array('#/properties', false),                         // top-level container
+            array('#/properties/propertyOne', true),              // schema in container
+            array('#/properties/propertyOne/notAKeyword', false), // not a keyword
+            array('#/not/not', true),                             // schema inside schema
+            array('#/not/allOf', true),                           // array schema inside schema
+            array('#/not/properties', false),                     // container inside schema
+            array('#/not/properties/propertyOne', true),          // schema inside container inside schema
+            array('#/allOf/4', true),                             // single element of array of schema
+        );
+    }
+
+    /** test pointer checker
+     *  @dataProvider dataJsonPointerChecker */
+    public function testJsonPointerChecker($pointer, $isSchema)
+    {
+        $info = new SchemaInfo(SchemaInfo::SPEC_DRAFT_06);
+
+        if ($isSchema) {
+            $this->assertTrue($info->pointerTargetIsSchema($pointer));
+        } else {
+            $this->assertFalse($info->pointerTargetIsSchema($pointer));
+        }
+    }
+
+    // test invalid pointer with checker
+    public function testJsonPointerCheckerInvalidPointerException()
+    {
+        $info = new SchemaInfo(SchemaInfo::SPEC_DRAFT_06);
+
+        // if it's not a pointer, we can't test it
+        $this->setExpectedException('\RuntimeException');
+        $info->pointerTargetIsSchema('http://example.com/schema');
+    }
 }
